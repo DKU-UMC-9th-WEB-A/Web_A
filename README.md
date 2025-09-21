@@ -4,9 +4,9 @@ DKU UMC Web 스터디 A조
 
 ## 👥 Member
 
-|   임세윤   |   지현구   |   김정현   |   최지우   |
+|   임세윤   |   지현구   |   최지우   |   김정현   |
 | :------: | :------: | :------: | :------: |
-| [임세윤](https://github.com/seyun31) | [지현구](https://github.com/stringnine) |
+| [임세윤](https://github.com/seyun31) | [지현구](https://github.com/stringnine) | [최지우](https://github.com/Choijiw00) |
 
 <br/>
 

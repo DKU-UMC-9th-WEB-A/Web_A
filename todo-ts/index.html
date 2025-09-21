@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>YONG TODO</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body class="page">
+    <main class="todo">
+      <h1 class="todo__title">YONG TODO</h1>
+
+      <div class="todo__control">
+        <input id="todo-input" class="todo__input" type="text" placeholder="할 일 입력" />
+        <button id="todo-add" class="btn btn--primary todo__add-btn">할 일 추가</button>
+      </div>
+
+      <section class="todo__lists">
+        <div class="todo__col">
+          <h2 class="todo__col-title">할 일</h2>
+          <ul id="todo-pending" class="todo__list" aria-live="polite"></ul>
+        </div>
+        <div class="todo__col">
+          <h2 class="todo__col-title">완료</h2>
+          <ul id="todo-done" class="todo__list" aria-live="polite"></ul>
+        </div>
+      </section>
+    </main>
+
+    <!-- 개발 중엔 dist/main.js가 생성된 뒤 로드됩니다 -->
+    <script type="module" src="./dist/main.js"></script>
+  </body>
+</html>

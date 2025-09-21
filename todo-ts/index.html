@@ -1,33 +1,44 @@
-<!doctype html>
-<html lang="ko">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>YONG TODO</title>
-    <link rel="stylesheet" href="./styles.css" />
-  </head>
-  <body class="page">
-    <main class="todo">
-      <h1 class="todo__title">YONG TODO</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./style.css">
+    <script type="module" src="./dist/main.js" defer ></script>
+      
+    <title>UMC TODO</title>  
+</head>
+<body>
+  <main class="todo-container">
+    <header class="todo-container__header">
+      <h1>UMC TODO</h1>
 
-      <div class="todo__control">
-        <input id="todo-input" class="todo__input" type="text" placeholder="할 일 입력" />
-        <button id="todo-add" class="btn btn--primary todo__add-btn">할 일 추가</button>
+      <form class="todo-container__form" autocomplete="off">
+        <input
+          class="todo-container__input"
+          type="text"
+          name="todo"
+          placeholder="할 일 입력"
+          aria-label="할 일 입력"
+          required
+        />
+        <button class="todo-container__button" type="submit">할 일 추가</button>
+      </form>
+    </header>
+
+    <section class="list-container">
+      <div class="list-container__section" aria-labelledby="todo-title">
+        <h2 id="todo-title" class="list-container__title">할 일</h2>
+        <ul class="list-container__list" data-list="todo"></ul>
       </div>
 
-      <section class="todo__lists">
-        <div class="todo__col">
-          <h2 class="todo__col-title">할 일</h2>
-          <ul id="todo-pending" class="todo__list" aria-live="polite"></ul>
-        </div>
-        <div class="todo__col">
-          <h2 class="todo__col-title">완료</h2>
-          <ul id="todo-done" class="todo__list" aria-live="polite"></ul>
-        </div>
-      </section>
-    </main>
+      <div class="list-container__section" aria-labelledby="done-title">
+        <h2 id="done-title" class="list-container__title">완료</h2>
+        <ul class="list-container__list" data-list="done"></ul>
+      </div>
+    </section>
+  </main>
+</body>
 
-    <!-- 개발 중엔 dist/main.js가 생성된 뒤 로드됩니다 -->
-    <script type="module" src="./dist/main.js"></script>
-  </body>
+
 </html>

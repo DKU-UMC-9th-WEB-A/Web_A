@@ -1,132 +1,152 @@
-// ===== Types =====
-export type TodoId = string;
+// src/script.ts
 
-export interface Todo {
-  id: TodoId;
-  title: string;
+type ListKind = "todo" | "done";
+
+interface TodoItemData {
+  id: string;
+  text: string;
   done: boolean;
 }
 
-// ===== State =====
-const state = {
-  todos: [] as Todo[],
+/** 안전한 선택자: 없으면 null 반환(throw 안 함) */
+const qs = <T extends Element>(sel: string, root: Document | Element = document): T | null =>
+  root.querySelector(sel) as T | null;
+
+/** 간단한 ID 생성 */
+const createId = (): string => {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    // @ts-ignore - 브라우저에서 지원됨
+    return crypto.randomUUID();
+  }
+  return `id_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 };
 
-// ===== DOM =====
-const $input = document.getElementById('todo-input') as HTMLInputElement;
-const $add = document.getElementById('todo-add') as HTMLButtonElement;
-const $pending = document.getElementById('todo-pending') as HTMLUListElement;
-const $done = document.getElementById('todo-done') as HTMLUListElement;
+const state: { items: TodoItemData[] } = { items: [] };
 
-// ===== Utils =====
-function createId(): TodoId {
-  if ('randomUUID' in crypto) return crypto.randomUUID();
-  return Math.random().toString(36).slice(2);
-}
-const isBlank = (s: string) => s.trim().length === 0;
+/** 아이템 DOM 생성 */
+const renderItem = (item: TodoItemData): HTMLLIElement => {
+  const li = document.createElement("li");
+  li.className = "list-container__item";
+  li.dataset.id = item.id;
 
-// ===== Actions =====
-function addTodo(title: string): void {
-  if (isBlank(title)) return;
-  const todo: Todo = { id: createId(), title: title.trim(), done: false };
-  state.todos.push(todo);
-  render();
-}
+  const p = document.createElement("p");
+  p.className = "list-container__item-text";
+  p.textContent = item.text;
 
-function toggleDone(id: TodoId): void {
-  const t = state.todos.find((t) => t.id === id);
-  if (!t) return;
-  t.done = !t.done;
-  render();
-}
+  const actions = document.createElement("div");
+  actions.className = "list-container__item-actions";
 
-function removeTodo(id: TodoId): void {
-  const i = state.todos.findIndex((t) => t.id === id);
-  if (i >= 0) {
-    state.todos.splice(i, 1);
-    render();
-  }
-}
-
-// ===== Render =====
-function renderList(target: HTMLUListElement, items: Todo[], done: boolean): void {
-  target.innerHTML = '';
-  const frag = document.createDocumentFragment();
-
-  for (const t of items) {
-    const li = document.createElement('li');
-    li.className = 'todo__item' + (t.done ? ' todo__item--done' : '');
-    li.dataset.id = t.id;
-
-    const title = document.createElement('span');
-    title.className = 'todo__title-text';
-    title.textContent = t.title;
-
-    const actions = document.createElement('div');
-    actions.className = 'todo__actions';
-
-    if (!done) {
-      const doneBtn = document.createElement('button');
-      doneBtn.className = 'btn btn--primary';
-      doneBtn.textContent = '완료';
-      doneBtn.setAttribute('data-action', 'toggle');
-      actions.appendChild(doneBtn);
-    } else {
-      const delBtn = document.createElement('button');
-      delBtn.className = 'btn btn--danger';
-      delBtn.textContent = '삭제';
-      delBtn.setAttribute('data-action', 'remove');
-      actions.appendChild(delBtn);
-    }
-
-    li.append(title, actions);
-    frag.appendChild(li);
+  if (!item.done) {
+    const completeBtn = document.createElement("button");
+    completeBtn.type = "button";
+    completeBtn.className =
+      "list-container__item-button list-container__item-button--complete";
+    completeBtn.textContent = "완료";
+    completeBtn.setAttribute("data-action", "complete");
+    actions.appendChild(completeBtn);
+  } else {
+    const deleteBtn = document.createElement("button");
+    deleteBtn.type = "button";
+    deleteBtn.className =
+      "list-container__item-button list-container__item-button--delete";
+    deleteBtn.textContent = "삭제";
+    deleteBtn.setAttribute("data-action", "delete");
+    actions.appendChild(deleteBtn);
   }
 
-  target.appendChild(frag);
-}
+  li.append(p, actions);
+  return li;
+};
 
-function render(): void {
-  const pending = state.todos.filter((t) => !t.done);
-  const done = state.todos.filter((t) => t.done);
+/** 해당 리스트(할 일/완료)에 아이템 붙이기 */
+const mountItem = (item: TodoItemData): void => {
+  const listSelector = item.done ? '[data-list="done"]' : '[data-list="todo"]';
+  const list = qs<HTMLUListElement>(`.list-container ${listSelector}`);
+  if (!list) {
+    console.error("error", listSelector);
+    return;
+  }
+  list.appendChild(renderItem(item));
+};
 
-  renderList($pending, pending, false);
-  renderList($done, done, true);
-}
+/** 추가 */
+const addItem = (text: string): void => {
+  const trimmed = text.trim();
+  if (!trimmed) return;
 
-// ===== Events =====
-$add.addEventListener('click', () => {
-  addTodo($input.value);
-  $input.value = '';
-  $input.focus();
+  const item: TodoItemData = { id: createId(), text: trimmed, done: false };
+  state.items.push(item);
+  mountItem(item);
+};
+
+/** 완료로 이동 */
+const moveToDone = (id: string): void => {
+  const item = state.items.find((i) => i.id === id);
+  if (!item || item.done) return;
+
+  item.done = true;
+
+  const li = document.querySelector<HTMLLIElement>(`[data-id="${id}"]`);
+  li?.parentElement?.removeChild(li);
+  mountItem(item);
+};
+
+/** 완료 목록에서 삭제 */
+const removeFromDone = (id: string): void => {
+  const idx = state.items.findIndex((i) => i.id === id && i.done);
+  if (idx === -1) return;
+
+  state.items.splice(idx, 1);
+
+  const li = document.querySelector<HTMLLIElement>(`[data-id="${id}"]`);
+  li?.parentElement?.removeChild(li);
+};
+
+/** 폼 이벤트 연결 */
+const wireForm = (): void => {
+  const form = qs<HTMLFormElement>(".todo-container__form");
+  const input = qs<HTMLInputElement>(".todo-container__input");
+  if (!form || !input) {
+    console.error("error");
+    return;
+  }
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const v = input.value;
+    addItem(v);
+    input.value = "";
+    input.focus();
+    // 디버그용
+    console.log("추가됨:", v);
+  });
+};
+
+/** 리스트(완료/삭제) 버튼 처리 - 이벤트 위임 */
+const wireLists = (): void => {
+  const container = qs<HTMLElement>(".list-container");
+  if (!container) {
+    console.error("'.list-container'를 못 찾았어요. HTML 구조 확인!");
+    return;
+  }
+
+  container.addEventListener("click", (e) => {
+    const target = e.target as HTMLElement | null;
+    if (!target) return;
+
+    const action = target.getAttribute("data-action");
+    if (!action) return;
+
+    const li = target.closest<HTMLLIElement>(".list-container__item");
+    const id = li?.dataset.id ?? "";
+    if (!id) return;
+
+    if (action === "complete") moveToDone(id);
+    if (action === "delete") removeFromDone(id);
+  });
+};
+
+document.addEventListener("DOMContentLoaded", () => {
+  wireForm();
+  wireLists();
 });
-
-$input.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter') {
-    addTodo($input.value);
-    $input.value = '';
-  }
-});
-
-$pending.addEventListener('click', (e) => {
-  const target = e.target as HTMLElement;
-  if (target.matches('[data-action="toggle"]')) {
-    const li = target.closest('.todo__item') as HTMLLIElement | null;
-    if (!li) return;
-    const id = li.dataset.id as TodoId;
-    toggleDone(id);
-  }
-});
-
-$done.addEventListener('click', (e) => {
-  const target = e.target as HTMLElement;
-  if (target.matches('[data-action="remove"]')) {
-    const li = target.closest('.todo__item') as HTMLLIElement | null;
-    if (!li) return;
-    const id = li.dataset.id as TodoId;
-    removeTodo(id);
-  }
-});
-
-// ===== Init =====
-render();

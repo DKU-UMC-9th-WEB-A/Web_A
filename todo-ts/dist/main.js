@@ -1,104 +1,119 @@
-const state = {
-    todos: [],
-};
-const $input = document.getElementById('todo-input');
-const $add = document.getElementById('todo-add');
-const $pending = document.getElementById('todo-pending');
-const $done = document.getElementById('todo-done');
-function createId() {
-    if ('randomUUID' in crypto)
+"use strict";
+const qs = (sel, root = document) => root.querySelector(sel);
+const createId = () => {
+    if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
         return crypto.randomUUID();
-    return Math.random().toString(36).slice(2);
-}
-const isBlank = (s) => s.trim().length === 0;
-function addTodo(title) {
-    if (isBlank(title))
+    }
+    return `id_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+};
+const state = { items: [] };
+const renderItem = (item) => {
+    const li = document.createElement("li");
+    li.className = "list-container__item";
+    li.dataset.id = item.id;
+    const p = document.createElement("p");
+    p.className = "list-container__item-text";
+    p.textContent = item.text;
+    const actions = document.createElement("div");
+    actions.className = "list-container__item-actions";
+    if (!item.done) {
+        const completeBtn = document.createElement("button");
+        completeBtn.type = "button";
+        completeBtn.className =
+            "list-container__item-button list-container__item-button--complete";
+        completeBtn.textContent = "완료";
+        completeBtn.setAttribute("data-action", "complete");
+        actions.appendChild(completeBtn);
+    }
+    else {
+        const deleteBtn = document.createElement("button");
+        deleteBtn.type = "button";
+        deleteBtn.className =
+            "list-container__item-button list-container__item-button--delete";
+        deleteBtn.textContent = "삭제";
+        deleteBtn.setAttribute("data-action", "delete");
+        actions.appendChild(deleteBtn);
+    }
+    li.append(p, actions);
+    return li;
+};
+const mountItem = (item) => {
+    const listSelector = item.done ? '[data-list="done"]' : '[data-list="todo"]';
+    const list = qs(`.list-container ${listSelector}`);
+    if (!list) {
+        console.error("error", listSelector);
         return;
-    const todo = { id: createId(), title: title.trim(), done: false };
-    state.todos.push(todo);
-    render();
-}
-function toggleDone(id) {
-    const t = state.todos.find((t) => t.id === id);
-    if (!t)
+    }
+    list.appendChild(renderItem(item));
+};
+const addItem = (text) => {
+    const trimmed = text.trim();
+    if (!trimmed)
         return;
-    t.done = !t.done;
-    render();
-}
-function removeTodo(id) {
-    const i = state.todos.findIndex((t) => t.id === id);
-    if (i >= 0) {
-        state.todos.splice(i, 1);
-        render();
+    const item = { id: createId(), text: trimmed, done: false };
+    state.items.push(item);
+    mountItem(item);
+};
+const moveToDone = (id) => {
+    var _a;
+    const item = state.items.find((i) => i.id === id);
+    if (!item || item.done)
+        return;
+    item.done = true;
+    const li = document.querySelector(`[data-id="${id}"]`);
+    (_a = li === null || li === void 0 ? void 0 : li.parentElement) === null || _a === void 0 ? void 0 : _a.removeChild(li);
+    mountItem(item);
+};
+const removeFromDone = (id) => {
+    var _a;
+    const idx = state.items.findIndex((i) => i.id === id && i.done);
+    if (idx === -1)
+        return;
+    state.items.splice(idx, 1);
+    const li = document.querySelector(`[data-id="${id}"]`);
+    (_a = li === null || li === void 0 ? void 0 : li.parentElement) === null || _a === void 0 ? void 0 : _a.removeChild(li);
+};
+const wireForm = () => {
+    const form = qs(".todo-container__form");
+    const input = qs(".todo-container__input");
+    if (!form || !input) {
+        console.error("error");
+        return;
     }
-}
-function renderList(target, items, done) {
-    target.innerHTML = '';
-    const frag = document.createDocumentFragment();
-    for (const t of items) {
-        const li = document.createElement('li');
-        li.className = 'todo__item' + (t.done ? ' todo__item--done' : '');
-        li.dataset.id = t.id;
-        const title = document.createElement('span');
-        title.className = 'todo__title-text';
-        title.textContent = t.title;
-        const actions = document.createElement('div');
-        actions.className = 'todo__actions';
-        if (!done) {
-            const doneBtn = document.createElement('button');
-            doneBtn.className = 'btn btn--primary';
-            doneBtn.textContent = '완료';
-            doneBtn.setAttribute('data-action', 'toggle');
-            actions.appendChild(doneBtn);
-        }
-        else {
-            const delBtn = document.createElement('button');
-            delBtn.className = 'btn btn--danger';
-            delBtn.textContent = '삭제';
-            delBtn.setAttribute('data-action', 'remove');
-            actions.appendChild(delBtn);
-        }
-        li.append(title, actions);
-        frag.appendChild(li);
+    form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const v = input.value;
+        addItem(v);
+        input.value = "";
+        input.focus();
+        console.log("추가됨:", v);
+    });
+};
+const wireLists = () => {
+    const container = qs(".list-container");
+    if (!container) {
+        console.error("'.list-container'를 못 찾았어요. HTML 구조 확인!");
+        return;
     }
-    target.appendChild(frag);
-}
-function render() {
-    const pending = state.todos.filter((t) => !t.done);
-    const done = state.todos.filter((t) => t.done);
-    renderList($pending, pending, false);
-    renderList($done, done, true);
-}
-$add.addEventListener('click', () => {
-    addTodo($input.value);
-    $input.value = '';
-    $input.focus();
-});
-$input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-        addTodo($input.value);
-        $input.value = '';
-    }
-});
-$pending.addEventListener('click', (e) => {
-    const target = e.target;
-    if (target.matches('[data-action="toggle"]')) {
-        const li = target.closest('.todo__item');
-        if (!li)
+    container.addEventListener("click", (e) => {
+        var _a;
+        const target = e.target;
+        if (!target)
             return;
-        const id = li.dataset.id;
-        toggleDone(id);
-    }
-});
-$done.addEventListener('click', (e) => {
-    const target = e.target;
-    if (target.matches('[data-action="remove"]')) {
-        const li = target.closest('.todo__item');
-        if (!li)
+        const action = target.getAttribute("data-action");
+        if (!action)
             return;
-        const id = li.dataset.id;
-        removeTodo(id);
-    }
+        const li = target.closest(".list-container__item");
+        const id = (_a = li === null || li === void 0 ? void 0 : li.dataset.id) !== null && _a !== void 0 ? _a : "";
+        if (!id)
+            return;
+        if (action === "complete")
+            moveToDone(id);
+        if (action === "delete")
+            removeFromDone(id);
+    });
+};
+document.addEventListener("DOMContentLoaded", () => {
+    wireForm();
+    wireLists();
 });
-render();
-export {};

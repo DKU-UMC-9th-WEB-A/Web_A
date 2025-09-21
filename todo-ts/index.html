@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="./style.css">
+    <script type="module" src="./dist/main.js" defer ></script>
+      
+    <title>UMC TODO</title>  
+</head>
+<body>
+  <main class="todo-container">
+    <header class="todo-container__header">
+      <h1>UMC TODO</h1>
+
+      <form class="todo-container__form" autocomplete="off">
+        <input
+          class="todo-container__input"
+          type="text"
+          name="todo"
+          placeholder="할 일 입력"
+          aria-label="할 일 입력"
+          required
+        />
+        <button class="todo-container__button" type="submit">할 일 추가</button>
+      </form>
+    </header>
+
+    <section class="list-container">
+      <div class="list-container__section" aria-labelledby="todo-title">
+        <h2 id="todo-title" class="list-container__title">할 일</h2>
+        <ul class="list-container__list" data-list="todo"></ul>
+      </div>
+
+      <div class="list-container__section" aria-labelledby="done-title">
+        <h2 id="done-title" class="list-container__title">완료</h2>
+        <ul class="list-container__list" data-list="done"></ul>
+      </div>
+    </section>
+  </main>
+</body>
+
+
+</html>
